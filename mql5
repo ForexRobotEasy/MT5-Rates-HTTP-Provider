@@ -1,0 +1,114 @@
+
+//+------------------------------------------------------------------+
+//|                                                     MT5 Rates HTTP Provider |
+//|                                     Developer's Site: forexroboteasy.com |
+//|                                                Development: Forex Robot Easy Team |
+//+------------------------------------------------------------------+
+
+// Include necessary libraries
+#include <Wininet.mqh>
+
+// Define constants
+#define HTTP_TIMEOUT 3000 // HTTP request timeout in milliseconds
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Initialize Wininet library
+    if (!InternetOpen('MT5 Rates HTTP Provider', INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0))
+    {
+        Print('Failed to initialize Wininet library: ', GetLastError());
+        return INIT_FAILED;
+    }
+    
+    return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    // Close Wininet library
+    InternetCloseHandle();
+}
+
+//+------------------------------------------------------------------+
+//| Expert start function                                            |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    // Perform data retrieval functions here
+    // Example: Retrieve historical rates data for specified symbols and timeframes
+    bool success = RetrieveHistoricalData('EURUSD', PERIOD_D1);
+    
+    if (success)
+    {
+        Print('Historical data retrieval succeeded!');
+    }
+    else
+    {
+        Print('Historical data retrieval failed!');
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Retrieve historical rates data for specified symbols and timeframes |
+//+------------------------------------------------------------------+
+bool RetrieveHistoricalData(string symbol, ENUM_TIMEFRAMES timeframe)
+{
+    // Construct the HTTP request URL
+    string url = 'https://forexroboteasy.com/api/historical_data?symbol=' + symbol + '&timeframe=' + EnumToString(timeframe);
+    
+    // Send the HTTP request
+    string response = SendHttpRequest(url);
+    
+    // Process the response and handle errors if necessary
+    if (response == 'SUCCESS')
+    {
+        // Data retrieval successful
+        return true;
+    }
+    else
+    {
+        // Data retrieval failed
+        Print('Failed to retrieve historical data for ', symbol, ' on timeframe ', EnumToString(timeframe));
+        return false;
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Send HTTP request to the specified URL                            |
+//+------------------------------------------------------------------+
+string SendHttpRequest(string url)
+{
+    // Initialize HTTP request variables
+    string response = '';
+    int requestHandle;
+    
+    // Open HTTP connection
+    requestHandle = InternetOpenUrl(url, HTTP_TIMEOUT);
+    
+    // Check if HTTP connection is successful
+    if (requestHandle == INVALID_HANDLE)
+    {
+        Print('Failed to establish HTTP connection: ', GetLastError());
+        return response;
+    }
+    
+    // Read HTTP response
+    char buffer[1024];
+    int bytesRead;
+    while(InternetReadFile(requestHandle, buffer, sizeof(buffer), bytesRead))
+    {
+        // Append response to the string
+        response += buffer;
+    }
+    
+    // Close HTTP connection
+    InternetCloseHandle(requestHandle);
+    
+    return response;
+}
